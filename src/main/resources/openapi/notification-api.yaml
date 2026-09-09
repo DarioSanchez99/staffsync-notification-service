@@ -1,0 +1,136 @@
+openapi: 3.0.3
+info:
+  title: Notification Service API
+  description: API for managing notifications in StaffSync
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8085
+    description: Local development
+
+tags:
+  - name: notifications
+    description: Notification management operations
+
+paths:
+  /notifications:
+    get:
+      tags:
+        - notifications
+      summary: List notifications for current user
+      operationId: listNotifications
+      parameters:
+        - name: X-User-Id
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NotificationResponse'
+
+  /notifications/unread/count:
+    get:
+      tags:
+        - notifications
+      summary: Count unread notifications for current user
+      operationId: countUnreadNotifications
+      parameters:
+        - name: X-User-Id
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Unread count
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnreadCountResponse'
+
+  /notifications/{id}/read:
+    put:
+      tags:
+        - notifications
+      summary: Mark a notification as read
+      operationId: markAsRead
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Notification marked as read
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationResponse'
+        '404':
+          description: Notification not found
+
+  /notifications/read-all:
+    put:
+      tags:
+        - notifications
+      summary: Mark all notifications as read for user
+      operationId: markAllAsRead
+      parameters:
+        - name: X-User-Id
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: All notifications marked as read
+
+components:
+  schemas:
+    NotificationType:
+      type: string
+      enum:
+        - VACATION_APPROVED
+        - VACATION_REJECTED
+        - SCHEDULE_UPDATED
+        - GENERAL
+
+    NotificationResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        recipientId:
+          type: string
+          format: uuid
+        type:
+          $ref: '#/components/schemas/NotificationType'
+        title:
+          type: string
+        message:
+          type: string
+        read:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    UnreadCountResponse:
+      type: object
+      properties:
+        count:
+          type: integer
+          format: int64
