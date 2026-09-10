@@ -31,7 +31,11 @@ public class VacationNotificationConsumer {
             String title;
             String message;
 
-            if ("VACATION_APPROVED".equals(type)) {
+            if ("VACATION_REQUESTED".equals(type)) {
+                notificationType = NotificationType.VACATION_REQUESTED;
+                title = "Vacation Request Submitted";
+                message = String.format("Your vacation request from %s to %s is pending approval.", startDate, endDate);
+            } else if ("VACATION_APPROVED".equals(type)) {
                 notificationType = NotificationType.VACATION_APPROVED;
                 title = "Vacation Request Approved";
                 message = String.format("Your vacation request from %s to %s has been approved.", startDate, endDate);

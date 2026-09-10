@@ -16,6 +16,8 @@ public class RabbitMQConfig {
     public static final String EXCHANGE_NAME = "staffsync.notifications";
     public static final String QUEUE_NAME = "staffsync.vacation.notifications";
     public static final String ROUTING_KEY = "vacation.#";
+    public static final String SCHEDULE_QUEUE_NAME = "staffsync.schedule.notifications";
+    public static final String SCHEDULE_ROUTING_KEY = "schedule.#";
 
     @Bean
     public TopicExchange staffsyncNotificationsExchange() {
@@ -34,6 +36,20 @@ public class RabbitMQConfig {
                 .bind(vacationNotificationsQueue)
                 .to(staffsyncNotificationsExchange)
                 .with(ROUTING_KEY);
+    }
+
+    @Bean
+    public Queue scheduleNotificationsQueue() {
+        return new Queue(SCHEDULE_QUEUE_NAME, true);
+    }
+
+    @Bean
+    public Binding scheduleNotificationsBinding(Queue scheduleNotificationsQueue,
+                                                 TopicExchange staffsyncNotificationsExchange) {
+        return BindingBuilder
+                .bind(scheduleNotificationsQueue)
+                .to(staffsyncNotificationsExchange)
+                .with(SCHEDULE_ROUTING_KEY);
     }
 
     @Bean
