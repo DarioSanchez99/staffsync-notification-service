@@ -28,16 +28,31 @@ public class ScheduleNotificationConsumer {
             String weekStart = (String) event.get("weekStart");
             Object employeeIdsObj = event.get("employeeIds");
 
-            if (!"SCHEDULE_PUBLISHED".equals(type) || employeeIdsObj == null) {
-                log.warn("Ignoring schedule event type: {}", type);
+            if (employeeIdsObj == null) {
+                log.warn("Ignoring schedule event with no employeeIds, type: {}", type);
+                return;
+            }
+
+            if (!"SCHEDULE_PUBLISHED".equals(type) && !"SCHEDULE_WEEK_PUBLISHED".equals(type)) {
+                log.debug("Ignoring schedule event type: {}", type);
                 return;
             }
 
             List<String> employeeIds = (List<String>) employeeIdsObj;
-            String title = "New Schedule Published";
-            String message = weekStart != null
-                    ? "Your schedule for the week of " + weekStart + " has been published."
-                    : "A new schedule has been published.";
+            Object shiftCountObj = event.get("shiftCount");
+            int shiftCount = shiftCountObj instanceof Number ? ((Number) shiftCountObj).intValue() : 0;
+
+            String title = "SCHEDULE_WEEK_PUBLISHED".equals(type) ? "Weekly Schedule Published" : "New Schedule Published";
+            String message;
+            if ("SCHEDULE_WEEK_PUBLISHED".equals(type) && weekStart != null) {
+                message = shiftCount > 0
+                        ? "Your schedule for the week of " + weekStart + " is now available. You have " + shiftCount + " shifts."
+                        : "Your schedule for the week of " + weekStart + " has been published.";
+            } else {
+                message = weekStart != null
+                        ? "Your schedule for the week of " + weekStart + " has been published."
+                        : "A new schedule has been published.";
+            }
 
             for (String employeeId : employeeIds) {
                 Notification notification = Notification.builder()
