@@ -3,6 +3,7 @@ package com.staffsync.notification.infrastructure.adapter.in.messaging;
 import com.staffsync.notification.domain.model.Notification;
 import com.staffsync.notification.domain.model.NotificationType;
 import com.staffsync.notification.domain.port.out.NotificationSavePort;
+import com.staffsync.notification.infrastructure.adapter.in.web.SseEmitterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -18,6 +19,7 @@ import java.util.UUID;
 public class VacationNotificationConsumer {
 
     private final NotificationSavePort notificationSavePort;
+    private final SseEmitterRegistry sseEmitterRegistry;
 
     @RabbitListener(queues = "staffsync.vacation.notifications")
     public void handleVacationEvent(Map<String, Object> event) {
@@ -59,6 +61,7 @@ public class VacationNotificationConsumer {
                     .build();
 
             notificationSavePort.save(notification);
+            sseEmitterRegistry.sendToUser(notification.getRecipientId(), Map.of("type", "NOTIFICATION"));
             log.info("Saved notification of type {} for employee {}", type, employeeId);
         } catch (Exception e) {
             log.error("Failed to process vacation event: {}", e.getMessage(), e);

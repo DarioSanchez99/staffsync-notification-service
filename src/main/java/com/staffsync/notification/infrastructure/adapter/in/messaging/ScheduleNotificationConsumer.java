@@ -3,6 +3,7 @@ package com.staffsync.notification.infrastructure.adapter.in.messaging;
 import com.staffsync.notification.domain.model.Notification;
 import com.staffsync.notification.domain.model.NotificationType;
 import com.staffsync.notification.domain.port.out.NotificationSavePort;
+import com.staffsync.notification.infrastructure.adapter.in.web.SseEmitterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -19,6 +20,7 @@ import java.util.UUID;
 public class ScheduleNotificationConsumer {
 
     private final NotificationSavePort notificationSavePort;
+    private final SseEmitterRegistry sseEmitterRegistry;
 
     @SuppressWarnings("unchecked")
     @RabbitListener(queues = "staffsync.schedule.notifications")
@@ -65,6 +67,7 @@ public class ScheduleNotificationConsumer {
                         .createdAt(LocalDateTime.now())
                         .build();
                 notificationSavePort.save(notification);
+                sseEmitterRegistry.sendToUser(notification.getRecipientId(), Map.of("type", "NOTIFICATION"));
             }
 
             log.info("Saved schedule notifications for {} employees", employeeIds.size());
