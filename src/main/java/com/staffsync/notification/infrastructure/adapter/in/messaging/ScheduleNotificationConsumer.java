@@ -4,6 +4,7 @@ import com.staffsync.notification.domain.model.Notification;
 import com.staffsync.notification.domain.model.NotificationType;
 import com.staffsync.notification.domain.port.out.NotificationSavePort;
 import com.staffsync.notification.infrastructure.adapter.in.web.SseEmitterRegistry;
+import com.staffsync.notification.infrastructure.adapter.out.client.EmployeeClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -21,6 +22,7 @@ public class ScheduleNotificationConsumer {
 
     private final NotificationSavePort notificationSavePort;
     private final SseEmitterRegistry sseEmitterRegistry;
+    private final EmployeeClient employeeClient;
 
     @SuppressWarnings("unchecked")
     @RabbitListener(queues = "staffsync.schedule.notifications")
@@ -56,10 +58,13 @@ public class ScheduleNotificationConsumer {
                         : "A new schedule has been published.";
             }
 
-            for (String employeeId : employeeIds) {
+            for (String employeeIdStr : employeeIds) {
+                UUID employeeId = UUID.fromString(employeeIdStr);
+                UUID recipientId = employeeClient.resolveUserId(employeeId).orElse(employeeId);
+
                 Notification notification = Notification.builder()
                         .id(UUID.randomUUID())
-                        .recipientId(UUID.fromString(employeeId))
+                        .recipientId(recipientId)
                         .type(NotificationType.SCHEDULE_PUBLISHED)
                         .title(title)
                         .message(message)
@@ -67,7 +72,7 @@ public class ScheduleNotificationConsumer {
                         .createdAt(LocalDateTime.now())
                         .build();
                 notificationSavePort.save(notification);
-                sseEmitterRegistry.sendToUser(notification.getRecipientId(), Map.of("type", "NOTIFICATION"));
+                sseEmitterRegistry.sendToUser(recipientId, Map.of("type", "NOTIFICATION"));
             }
 
             log.info("Saved schedule notifications for {} employees", employeeIds.size());

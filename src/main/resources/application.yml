@@ -17,6 +17,9 @@ spring:
     username: ${RABBITMQ_USER:guest}
     password: ${RABBITMQ_PASS:guest}
 
+services:
+  employee-url: ${EMPLOYEE_SERVICE_URL:http://localhost:8082}
+
 eureka:
   client:
     service-url:
